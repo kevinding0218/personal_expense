@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
         errorColor: Colors.red,
         fontFamily: 'Quicksand',
         textTheme: ThemeData.light().textTheme.copyWith(
-              subtitle1: TextStyle(
+              title: TextStyle(
                 fontFamily: 'OpenSans',
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
             ),
         appBarTheme: AppBarTheme(
           textTheme: ThemeData.light().textTheme.copyWith(
-                subtitle1: TextStyle(
+                title: TextStyle(
                   fontFamily: 'OpenSans',
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -120,11 +120,35 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final isLandscape = mediaQuery.orientation == Orientation.landscape;
-    final PreferredSizeWidget appBar = Platform.isIOS
+  List<Widget> _buildLandscapeContent(Widget txChart, Widget txListWidget) {
+    return [
+      Row(
+        children: <Widget>[
+          Text(
+            'Show Chart',
+            style: Theme.of(context).textTheme.title,
+          ),
+          Switch.adaptive(
+            activeColor: Theme.of(context).accentColor,
+            value: this._showChart,
+            onChanged: (val) {
+              setState(() {
+                this._showChart = val;
+              });
+            },
+          ),
+        ],
+      ),
+      this._showChart ? txChart : txListWidget,
+    ];
+  }
+
+  List<Widget> _buildPortraitContent(Widget txChart, Widget txListWidget) {
+    return [txChart, txListWidget];
+  }
+
+  Widget _buildAppBar() {
+    return Platform.isIOS
         ? CupertinoNavigationBar(
             middle: Text(
               'Personal Expenses',
@@ -151,6 +175,13 @@ class _MyHomePageState extends State<MyHomePage> {
               )
             ],
           );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final isLandscape = mediaQuery.orientation == Orientation.landscape;
+    final PreferredSizeWidget appBar = this._buildAppBar();
 
     final txListWidget = Container(
         height: (mediaQuery.size.height -
@@ -174,30 +205,14 @@ class _MyHomePageState extends State<MyHomePage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             if (isLandscape)
-              Row(
-                children: <Widget>[
-                  Text(
-                    'Show Chart',
-                    style: Theme.of(context).textTheme.title,
-                  ),
-                  Switch.adaptive(
-                    activeColor: Theme.of(context).accentColor,
-                    value: this._showChart,
-                    onChanged: (val) {
-                      setState(() {
-                        this._showChart = val;
-                      });
-                    },
-                  ),
-                ],
-              ),
-            if (isLandscape) this._showChart ? txChart(0.7) : txListWidget,
-            if (!isLandscape) txChart(0.3),
-            if (!isLandscape) txListWidget,
+              ...this._buildLandscapeContent(txChart(0.7), txListWidget),
+            if (!isLandscape)
+              ...this._buildPortraitContent(txChart(0.3), txListWidget),
           ],
         ),
       ),
     );
+
     return Platform.isIOS
         ? CupertinoPageScaffold(
             child: pageBody,
